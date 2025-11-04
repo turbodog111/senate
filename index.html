@@ -53,23 +53,37 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
             animation: slideUp 1s ease-out;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        .seats-grid {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 12px;
+        .seats-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
             margin-bottom: 30px;
+            padding: 20px;
+        }
+
+        .seat-row {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
         }
 
         .seat {
-            aspect-ratio: 1;
-            border-radius: 8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
             background: #2d3748;
             transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             cursor: pointer;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
         .seat::before {
@@ -307,8 +321,16 @@
                 font-size: 2em;
             }
 
-            .seats-grid {
-                grid-template-columns: repeat(5, 1fr);
+            .seat {
+                width: 18px;
+                height: 18px;
+            }
+
+            .seat-row {
+                gap: 6px;
+            }
+
+            .seats-container {
                 gap: 8px;
             }
 
@@ -330,7 +352,7 @@
         </header>
 
         <div class="senate-chamber">
-            <div class="seats-grid" id="seatsGrid"></div>
+            <div class="seats-container" id="seatsContainer"></div>
 
             <div class="scoreboard">
                 <div class="score republican">
@@ -374,28 +396,62 @@
         let raceCalls = {};
 
         function initializeSeats() {
-            const seatsGrid = document.getElementById('seatsGrid');
-            seatsGrid.innerHTML = '';
+            const seatsContainer = document.getElementById('seatsContainer');
+            seatsContainer.innerHTML = '';
 
-            for (let i = 0; i < 100; i++) {
-                const seat = document.createElement('div');
-                seat.className = 'seat';
+            // Define the 5 rows with decreasing seat counts (amphitheater style)
+            const rowSizes = [25, 22, 20, 17, 16]; // Total: 100 seats
 
-                if (i < republicanSeats) {
-                    seat.classList.add('republican');
-                } else if (i < republicanSeats + democratSeats) {
-                    seat.classList.add('democrat');
-                } else {
-                    seat.classList.add('uncalled');
+            let seatIndex = 0;
+            let demLeft = democratSeats;
+            let repLeft = republicanSeats;
+
+            rowSizes.forEach((rowSize, rowIndex) => {
+                const row = document.createElement('div');
+                row.className = 'seat-row';
+
+                for (let i = 0; i < rowSize; i++) {
+                    const seat = document.createElement('div');
+                    seat.className = 'seat';
+                    seat.dataset.index = seatIndex;
+
+                    // Determine seat party based on position
+                    // Democrats fill from left, Republicans from right
+                    const positionInRow = i / rowSize;
+
+                    if (positionInRow < 0.4 && demLeft > 0) {
+                        // Left side - Democrats
+                        seat.classList.add('democrat');
+                        demLeft--;
+                    } else if (positionInRow > 0.6 && repLeft > 0) {
+                        // Right side - Republicans
+                        seat.classList.add('republican');
+                        repLeft--;
+                    } else if (demLeft > 0 && repLeft === 0) {
+                        // Fill remaining with Democrats
+                        seat.classList.add('democrat');
+                        demLeft--;
+                    } else if (repLeft > 0 && demLeft === 0) {
+                        // Fill remaining with Republicans
+                        seat.classList.add('republican');
+                        repLeft--;
+                    } else {
+                        // Uncalled races in the middle
+                        seat.classList.add('uncalled');
+                    }
+
+                    row.appendChild(seat);
+
+                    // Stagger animation
+                    setTimeout(() => {
+                        seat.style.animation = 'fadeIn 0.5s ease-out';
+                    }, seatIndex * 5);
+
+                    seatIndex++;
                 }
 
-                seatsGrid.appendChild(seat);
-
-                // Stagger animation
-                setTimeout(() => {
-                    seat.style.animation = 'fadeIn 0.5s ease-out';
-                }, i * 10);
-            }
+                seatsContainer.appendChild(row);
+            });
         }
 
         function initializeRaces() {
@@ -483,26 +539,8 @@
             animateValue(repScore, parseInt(repScore.textContent), republicanSeats, 500);
             animateValue(demScore, parseInt(demScore.textContent), democratSeats, 500);
 
-            // Update seats visualization
-            const seats = document.querySelectorAll('.seat');
-            let repCount = 0;
-            let demCount = 0;
-            let uncalledCount = 0;
-
-            seats.forEach((seat, index) => {
-                seat.className = 'seat';
-
-                if (repCount < republicanSeats) {
-                    seat.classList.add('republican');
-                    repCount++;
-                } else if (demCount < democratSeats) {
-                    seat.classList.add('democrat');
-                    demCount++;
-                } else {
-                    seat.classList.add('uncalled');
-                    uncalledCount++;
-                }
-            });
+            // Rebuild seats visualization with new counts
+            initializeSeats();
 
             // Update race card styling
             if (changedState) {
