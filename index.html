@@ -381,9 +381,10 @@
                 const seat = document.createElement('div');
                 seat.className = 'seat';
 
+                // Republicans on the left (0-49), Democrats on the right (50-99)
                 if (i < republicanSeats) {
                     seat.classList.add('republican');
-                } else if (i < republicanSeats + democratSeats) {
+                } else if (i >= 100 - democratSeats) {
                     seat.classList.add('democrat');
                 } else {
                     seat.classList.add('uncalled');
@@ -485,22 +486,17 @@
 
             // Update seats visualization
             const seats = document.querySelectorAll('.seat');
-            let repCount = 0;
-            let demCount = 0;
-            let uncalledCount = 0;
 
             seats.forEach((seat, index) => {
                 seat.className = 'seat';
 
-                if (repCount < republicanSeats) {
+                // Republicans on the left (0-49), Democrats on the right (50-99)
+                if (index < republicanSeats) {
                     seat.classList.add('republican');
-                    repCount++;
-                } else if (demCount < democratSeats) {
+                } else if (index >= 100 - democratSeats) {
                     seat.classList.add('democrat');
-                    demCount++;
                 } else {
                     seat.classList.add('uncalled');
-                    uncalledCount++;
                 }
             });
 
